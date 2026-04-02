@@ -5,7 +5,7 @@ import './Auth.css';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { updateProfile, registerUser } = useNutrition();
+    const { updateProfile, loading, error: contextError, userProfile } = useNutrition();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -13,9 +13,11 @@ const Profile = () => {
         age: '',
         height: '',
         weight: '',
+        waist: '',
         dateOfBirth: '',
         gender: ''
     });
+    const [error, setError] = useState('');
 
     useEffect(() => {
         // Load signup data from sessionStorage
@@ -33,16 +35,51 @@ const Profile = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (userProfile?.id) {
+            setFormData((prev) => ({
+                ...prev,
+                name: userProfile.name || prev.name,
+                age: userProfile.age ?? prev.age,
+                height: userProfile.height ?? prev.height,
+                weight: userProfile.weight ?? prev.weight,
+                waist: userProfile.waist ?? prev.waist,
+                dateOfBirth: userProfile.dateOfBirth || prev.dateOfBirth,
+                gender: userProfile.gender || prev.gender
+            }));
+        }
+    }, [userProfile]);
+
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-    const handleSubmit = (e) => {
+    const waistToHeightRatio = (() => {
+        const height = Number(formData.height);
+        const waist = Number(formData.waist);
+        if (!height || !waist) return null;
+        return waist / height;
+    })();
+
+    const bellyFatRisk = waistToHeightRatio === null
+        ? 'Add waist and height to calculate risk'
+        : waistToHeightRatio >= 0.6
+            ? 'High risk'
+            : waistToHeightRatio >= 0.5
+                ? 'Moderate risk'
+                : 'Low risk';
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Register user with all data
-        registerUser(formData);
-        updateProfile(formData);
-        // Clear signup data
-        sessionStorage.removeItem('signup_data');
-        navigate('/dashboard');
+        setError('');
+        
+        // Update profile with additional information
+        const success = await updateProfile(formData);
+        if (success) {
+            // Clear signup data
+            sessionStorage.removeItem('signup_data');
+            navigate('/dashboard');
+        } else {
+            setError(contextError || 'Failed to update profile');
+        }
     };
 
     return (
@@ -100,6 +137,8 @@ const Profile = () => {
                             <p>Fill in your information to get started</p>
                         </div>
 
+                        {error && <div className="auth-error">{error}</div>}
+
                         <form onSubmit={handleSubmit} className="auth-form">
                             <div className="form-row">
                                 <div className="form-group">
@@ -154,6 +193,21 @@ const Profile = () => {
                                         <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                                         <input type="number" id="weight" name="weight" placeholder="e.g., 65" min="10" max="300" value={formData.weight} onChange={handleChange} required />
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="waist">Waist (cm)</label>
+                                    <div className="input-wrapper">
+                                        <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 5c4 3 8 3 12 0" /><path d="M6 19c4-3 8-3 12 0" /><path d="M12 5v14" /></svg>
+                                        <input type="number" id="waist" name="waist" placeholder="e.g., 82" min="30" max="200" value={formData.waist} onChange={handleChange} required />
+                                    </div>
+                                </div>
+                                <div className="profile-insight">
+                                    <span className="profile-insight-label">Waist-to-height ratio</span>
+                                    <strong>{waistToHeightRatio ? waistToHeightRatio.toFixed(2) : '--'}</strong>
+                                    <small>{bellyFatRisk}</small>
                                 </div>
                             </div>
 

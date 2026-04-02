@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useNutrition } from '../context/NutritionContext';
@@ -6,55 +6,81 @@ import './Messages.css';
 
 const DoctorMessages = () => {
     const navigate = useNavigate();
-    const { loggedInDoctor, chatMessages, users, sendDoctorMessage } = useNutrition();
+    const {
+        loggedInDoctor,
+        doctorId,
+        sendDoctorMessage,
+        getDoctorInbox,
+        getDoctorConversation,
+        getDoctorUserDaywiseReport,
+        error: contextError
+    } = useNutrition();
+    const [userConversations, setUserConversations] = useState([]);
+    const [currentMessages, setCurrentMessages] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [newMessage, setNewMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [fromDate, setFromDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        return d.toISOString().split('T')[0];
+    });
+    const [toDate, setToDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [daywiseReport, setDaywiseReport] = useState([]);
 
     if (!loggedInDoctor) {
         navigate('/doctor-login');
         return null;
     }
 
-    // Helper to get user details from email
-    const getUserDetails = (email) => {
-        const user = users.find(u => u.email === email);
-        return {
-            name: user?.name || email,
-            avatar: user?.name?.charAt(0).toUpperCase() || email.charAt(0).toUpperCase()
+    useEffect(() => {
+        const loadInbox = async () => {
+            if (!doctorId) return;
+            setLoading(true);
+            const inbox = await getDoctorInbox();
+            const mapped = inbox.map((item) => ({
+                userId: item.userId,
+                userName: item.userName || item.userEmail || `User ${item.userId}`,
+                avatar: (item.userName || item.userEmail || 'U').slice(0, 2).toUpperCase(),
+                lastMessage: item.lastMessage || '',
+                time: item.lastMessageAt ? new Date(item.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+                rawTime: item.lastMessageAt || '',
+                unread: 0
+            }));
+            setUserConversations(mapped);
+            setLoading(false);
         };
-    };
 
-    // Get all users who have messaged this doctor
-    const userConversations = Object.entries(chatMessages)
-        .filter(([key]) => key.includes(`doctor_${loggedInDoctor.id}`))
-        .map(([key, messages]) => {
-            const userEmail = key.split('_doctor_')[0].replace('user_', '');
-            const userDetails = getUserDetails(userEmail);
-            return {
-                key,
-                userEmail,
-                userName: userDetails.name,
-                avatar: userDetails.avatar,
-                messages,
-                lastMessage: messages[messages.length - 1],
-                unread: messages.filter(m => m.from === 'user' && !m.read).length
-            };
-        })
-        .sort((a, b) => {
-            // Sort by last message time, most recent first
-            const timeA = a.messages[a.messages.length - 1]?.id || 0;
-            const timeB = b.messages[b.messages.length - 1]?.id || 0;
-            return timeB - timeA;
-        });
+        loadInbox();
+    }, [doctorId]);
 
-    const currentMessages = selectedUser 
-        ? chatMessages[selectedUser.key] || []
-        : [];
+    useEffect(() => {
+        const loadConversation = async () => {
+            if (!selectedUser?.userId) {
+                setCurrentMessages([]);
+                return;
+            }
+            setLoading(true);
+            const conversation = await getDoctorConversation(selectedUser.userId);
+            setCurrentMessages(conversation);
+            const reports = await getDoctorUserDaywiseReport(selectedUser.userId, fromDate, toDate);
+            setDaywiseReport(reports);
+            setLoading(false);
+        };
 
-    const handleSendMessage = () => {
+        loadConversation();
+    }, [selectedUser?.userId, fromDate, toDate]);
+
+    const handleSendMessage = async () => {
         if (newMessage.trim() && selectedUser) {
-            sendDoctorMessage(loggedInDoctor.id, selectedUser.userEmail, newMessage);
-            setNewMessage('');
+            const success = await sendDoctorMessage(loggedInDoctor.id, selectedUser.userId, newMessage);
+            if (success) {
+                setNewMessage('');
+                const conversation = await getDoctorConversation(selectedUser.userId);
+                setCurrentMessages(conversation);
+            } else {
+                alert(`❌ Failed to send message: ${contextError || 'Unknown error'}`);
+            }
         }
     };
 
@@ -86,22 +112,22 @@ const DoctorMessages = () => {
                         <div className="doctor-list">
                             {userConversations.length === 0 ? (
                                 <div className="no-conversations">
-                                    <p>No patient messages yet</p>
+                                    <p>{loading ? 'Loading conversations...' : 'No patient messages yet'}</p>
                                 </div>
                             ) : (
                                 userConversations.map((conv) => (
                                     <div 
-                                        key={conv.key} 
-                                        className={`msg-contact doctor-card ${selectedUser?.key === conv.key ? 'active' : ''}`}
+                                        key={conv.userId}
+                                        className={`msg-contact doctor-card ${selectedUser?.userId === conv.userId ? 'active' : ''}`}
                                         onClick={() => setSelectedUser(conv)}
                                     >
                                         <div className="contact-avatar">{conv.avatar}</div>
                                         <div className="contact-info">
                                             <div className="contact-name">{conv.userName}</div>
-                                            <div className="contact-preview">{conv.lastMessage?.text?.slice(0, 30)}...</div>
+                                            <div className="contact-preview">{(conv.lastMessage || '').slice(0, 40) || 'No messages yet'}</div>
                                         </div>
                                         <div className="conv-meta">
-                                            <span className="conv-time">{conv.lastMessage?.time}</span>
+                                            <span className="conv-time">{conv.time}</span>
                                             {conv.unread > 0 && <span className="conv-badge">{conv.unread}</span>}
                                         </div>
                                     </div>
@@ -143,7 +169,7 @@ const DoctorMessages = () => {
                                             <div key={msg.id} className={`chat-msg ${msg.from === 'doctor' ? 'user' : 'doctor'}`}>
                                                 <div className="msg-bubble">
                                                     <p>{msg.text}</p>
-                                                    <span className="msg-time">{msg.time}</span>
+                                                    <span className="msg-time">{msg.time || '-'}</span>
                                                 </div>
                                                 {msg.from === 'doctor' && msg.rated && (
                                                     <div className="rated-badge">
@@ -174,6 +200,50 @@ const DoctorMessages = () => {
                                             <polygon points="22 2 15 22 11 13 2 9 22 2" />
                                         </svg>
                                     </button>
+                                </div>
+
+                                <div className="dash-card" style={{ marginTop: '14px' }}>
+                                    <div className="card-header">
+                                        <h3>Day-to-Day Nutrition Report</h3>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                        <input type="date" className="food-select" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                                        <input type="date" className="food-select" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                                    </div>
+                                    {daywiseReport.length === 0 ? (
+                                        <p style={{ color: 'var(--text-muted)' }}>No nutrition logs in this date range.</p>
+                                    ) : (
+                                        <div className="meals-table">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Meals</th>
+                                                        <th>Calories</th>
+                                                        <th>Protein</th>
+                                                        <th>Carbs</th>
+                                                        <th>Fat</th>
+                                                        <th>Fiber</th>
+                                                        <th>Water</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {daywiseReport.map((row) => (
+                                                        <tr key={row.date}>
+                                                            <td>{String(row.date).slice(0, 10)}</td>
+                                                            <td>{row.mealsCount}</td>
+                                                            <td>{row.calories}</td>
+                                                            <td>{row.protein}g</td>
+                                                            <td>{row.carbs}g</td>
+                                                            <td>{row.fat}g</td>
+                                                            <td>{row.fiber}g</td>
+                                                            <td>{row.waterGlasses} glasses</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}

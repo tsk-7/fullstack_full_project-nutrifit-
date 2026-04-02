@@ -1,26 +1,73 @@
+import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
+import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
+    const [statsData, setStatsData] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const authHeaders = useMemo(() => {
+        try {
+            const tokenRaw = localStorage.getItem('nutrifit_token');
+            const token = tokenRaw ? JSON.parse(tokenRaw) : null;
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        } catch {
+            return {};
+        }
+    }, []);
+
+    useEffect(() => {
+        const loadAdminData = async () => {
+            try {
+                setLoading(true);
+                setError('');
+                const [statsRes, usersRes] = await Promise.all([
+                    fetch('http://localhost:5000/api/admin/stats', { headers: authHeaders }),
+                    fetch('http://localhost:5000/api/users', { headers: authHeaders })
+                ]);
+
+                if (!statsRes.ok || !usersRes.ok) {
+                    const statsErr = await statsRes.json().catch(() => ({}));
+                    const usersErr = await usersRes.json().catch(() => ({}));
+                    throw new Error(statsErr.message || usersErr.message || 'Failed to load admin data');
+                }
+
+                const statsJson = await statsRes.json();
+                const usersJson = await usersRes.json();
+                setStatsData(statsJson);
+                setUsers(Array.isArray(usersJson) ? usersJson : []);
+            } catch (err) {
+                setError(err.message || 'Failed to load dashboard data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadAdminData();
+    }, []);
+
     const stats = [
-        { icon: '👥', value: '2,847', label: 'Total Users', trend: '+12.5%', up: true, color: '#22c55e' },
-        { icon: '🍽️', value: '156', label: 'Food Items', trend: '+3.2%', up: true, color: '#06b6d4' },
-        { icon: '📋', value: '42', label: 'Diet Plans', trend: '+8.1%', up: true, color: '#8b5cf6' },
-        { icon: '💬', value: '18', label: 'Pending Msgs', trend: '-5.3%', up: false, color: '#f59e0b' },
+        { icon: '👥', value: statsData?.totalUsers ?? 0, label: 'Total Users', trend: 'Live', up: true, color: '#22c55e' },
+        { icon: '🍽️', value: statsData?.totalMeals ?? 0, label: 'Total Meals Logged', trend: 'Live', up: true, color: '#06b6d4' },
+        { icon: '🩺', value: statsData?.totalDoctors ?? 0, label: 'Total Doctors', trend: 'Live', up: true, color: '#8b5cf6' },
+        { icon: '💬', value: statsData?.totalMessages ?? 0, label: 'Total Messages', trend: 'Live', up: true, color: '#f59e0b' },
     ];
 
-    const userGrowth = [
-        { month: 'Jan', users: 800 }, { month: 'Feb', users: 1200 },
-        { month: 'Mar', users: 1500 }, { month: 'Apr', users: 1800 },
-        { month: 'May', users: 2200 }, { month: 'Jun', users: 2847 },
-    ];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const userGrowth = monthNames.map((month, idx) => ({
+        month,
+        users: users.filter((u) => u.createdAt && new Date(u.createdAt).getMonth() <= idx).length
+    }));
 
     const ageGroups = [
-        { name: '5-12', value: 25, color: '#22c55e' },
-        { name: '13-18', value: 35, color: '#06b6d4' },
-        { name: '19-30', value: 25, color: '#8b5cf6' },
-        { name: '30+', value: 15, color: '#f59e0b' },
+        { name: '5-12', value: users.filter((u) => (u.age || 0) >= 5 && (u.age || 0) <= 12).length, color: '#22c55e' },
+        { name: '13-18', value: users.filter((u) => (u.age || 0) >= 13 && (u.age || 0) <= 18).length, color: '#06b6d4' },
+        { name: '19-30', value: users.filter((u) => (u.age || 0) >= 19 && (u.age || 0) <= 30).length, color: '#8b5cf6' },
+        { name: '30+', value: users.filter((u) => (u.age || 0) > 30).length, color: '#f59e0b' },
     ];
 
     const topDeficiencies = [
@@ -31,12 +78,16 @@ const AdminDashboard = () => {
         { nutrient: 'Fiber', count: 389, percent: 14 },
     ];
 
-    const recentUsers = [
-        { name: 'Priya Sharma', email: 'priya@email.com', age: 14, bmi: 21.3, status: 'Active' },
-        { name: 'Rahul Patel', email: 'rahul@email.com', age: 28, bmi: 24.8, status: 'Active' },
-        { name: 'Anita Verma', email: 'anita@email.com', age: 10, bmi: 18.2, status: 'New' },
-        { name: 'Vikram Singh', email: 'vikram@email.com', age: 35, bmi: 27.1, status: 'Active' },
-    ];
+    const recentUsers = [...users]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 6)
+        .map((u) => ({
+            name: u.name || 'Unnamed User',
+            email: u.email,
+            age: u.age || '-',
+            bmi: '-',
+            status: u.profileComplete ? 'Active' : 'New'
+        }));
 
     return (
         <div className="dashboard-page">
@@ -48,6 +99,9 @@ const AdminDashboard = () => {
                         <p>Manage users, food database, and monitor platform health</p>
                     </div>
                 </div>
+
+                {loading && <div className="dash-card" style={{ padding: '16px' }}>Loading dashboard...</div>}
+                {error && <div className="dash-card" style={{ padding: '16px', color: '#ef4444' }}>{error}</div>}
 
                 {/* Admin Stats */}
                 <div className="stats-grid">
@@ -99,7 +153,7 @@ const AdminDashboard = () => {
                                 <div key={i} className="age-item">
                                     <span className="age-dot" style={{ background: a.color }}></span>
                                     <span>{a.name} yrs</span>
-                                    <strong>{a.value}%</strong>
+                                    <strong>{a.value}</strong>
                                 </div>
                             ))}
                         </div>
@@ -129,7 +183,7 @@ const AdminDashboard = () => {
                     <div className="dash-card span-2">
                         <div className="card-header">
                             <h3>Recent Users</h3>
-                            <a href="/admin/users" className="card-link">View All →</a>
+                            <Link to="/admin/users" className="card-link">View All →</Link>
                         </div>
                         <div className="admin-table">
                             <table>

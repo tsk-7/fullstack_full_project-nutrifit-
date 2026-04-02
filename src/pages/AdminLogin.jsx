@@ -1,13 +1,36 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useNutrition } from '../context/NutritionContext';
 import './Auth.css';
 
 const AdminLogin = () => {
+    const navigate = useNavigate();
+    const { loginUser, loading } = useNutrition();
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-    const handleSubmit = (e) => { e.preventDefault(); window.location.href = '/admin'; };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        const email = String(formData.email || '').trim().toLowerCase();
+        const password = String(formData.password || '').trim();
+
+        if (!email || !password) {
+            setError('Please enter admin email and password.');
+            return;
+        }
+
+        const success = await loginUser(email, password);
+        if (!success) {
+            setError('Invalid admin credentials. Use tharun@nutrifit.com / admin123.');
+            return;
+        }
+
+        navigate('/admin');
+    };
 
     return (
         <div className="auth-page">
@@ -68,12 +91,14 @@ const AdminLogin = () => {
                             <p>Enter your admin credentials</p>
                         </div>
 
+                        {error && <div className="auth-error">{error}</div>}
+
                         <form onSubmit={handleSubmit} className="auth-form">
                             <div className="form-group">
                                 <label htmlFor="email">Admin Email</label>
                                 <div className="input-wrapper">
                                     <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                                    <input type="email" id="email" name="email" placeholder="admin@nutrifit.com" value={formData.email} onChange={handleChange} required />
+                                    <input type="email" id="email" name="email" placeholder="tharun@nutrifit.com" value={formData.email} onChange={handleChange} required />
                                 </div>
                             </div>
 
@@ -88,7 +113,7 @@ const AdminLogin = () => {
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn-primary auth-submit" style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)' }}>
+                            <button type="submit" className="btn-primary auth-submit" style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)' }} disabled={loading}>
                                 Access Admin Panel
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                             </button>
@@ -96,6 +121,9 @@ const AdminLogin = () => {
 
                         <p className="auth-footer-text">
                             <Link to="/login">← Back to User Login</Link>
+                        </p>
+                        <p className="auth-footer-text" style={{ marginTop: '8px', color: '#64748b' }}>
+                            Demo admin: tharun@nutrifit.com / admin123
                         </p>
                     </div>
                 </div>

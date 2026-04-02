@@ -1,13 +1,73 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { useNutrition } from '../context/NutritionContext';
-import { RadialBarChart, RadialBar, ResponsiveContainer, Legend } from 'recharts';
+import { foodAPI } from '../services/api';
 import './DietAnalysis.css';
 
 const DietAnalysis = () => {
-    const { meals, addMeal, totals } = useNutrition();
-    const [selectedMeal, setSelectedMeal] = useState('');
+    const { meals, addMeal, totals, waterGlasses, updateWaterGlasses, getDailyReport, error: contextError } = useNutrition();
+    const [selectedMealId, setSelectedMealId] = useState('');
     const [selectedTime, setSelectedTime] = useState('Breakfast');
+    const [selectedDietType, setSelectedDietType] = useState('all');
+    const [addMealError, setAddMealError] = useState('');
+    const [manualFoodName, setManualFoodName] = useState('');
+    const [manualCalories, setManualCalories] = useState('');
+    const [manualProtein, setManualProtein] = useState('');
+    const [manualCarbs, setManualCarbs] = useState('');
+    const [manualFat, setManualFat] = useState('');
+    const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+    const [dailyReport, setDailyReport] = useState(null);
+    const [loadingReport, setLoadingReport] = useState(false);
+    const [reportLastUpdated, setReportLastUpdated] = useState('');
+    const [waterDraft, setWaterDraft] = useState(String(waterGlasses || 0));
+    const [reportRefreshKey, setReportRefreshKey] = useState(0);
+    const [foods, setFoods] = useState([]);
+    const [loadingFoods, setLoadingFoods] = useState(true);
+    const [foodsError, setFoodsError] = useState('');
+
+    useEffect(() => {
+        const loadFoods = async () => {
+            try {
+                setLoadingFoods(true);
+                const data = await foodAPI.getAllFoods();
+                setFoods(Array.isArray(data) ? data : []);
+            } catch (error) {
+                setFoodsError(error.message || 'Failed to load foods');
+            } finally {
+                setLoadingFoods(false);
+            }
+        };
+
+        loadFoods();
+    }, []);
+
+    const loadReport = async () => {
+        setLoadingReport(true);
+        const report = await getDailyReport(reportDate);
+        setDailyReport(report);
+        setReportLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        setLoadingReport(false);
+    };
+
+    useEffect(() => {
+        loadReport();
+    }, [reportDate, reportRefreshKey]);
+
+    useEffect(() => {
+        setWaterDraft(String(waterGlasses || 0));
+    }, [waterGlasses]);
+
+    const detectDietType = (food) => {
+        const explicitType = String(food.dietType || food.diet_type || '').trim().toLowerCase();
+        if (explicitType === 'veg' || explicitType === 'nonveg') {
+            return explicitType;
+        }
+
+        const text = `${food.name || ''} ${food.category || ''}`.toLowerCase();
+        return /(chicken|fish|egg|eggs|mutton|meat|beef|pork|lamb|duck|goat|prawn|shrimp|crab|lobster|keema|chorizo)/i.test(text)
+            ? 'nonveg'
+            : 'veg';
+    };
 
     // Calculate nutrient scores based on daily targets (percentage)
     const proteinTarget = 60;
@@ -34,28 +94,46 @@ const DietAnalysis = () => {
         { meal: 'Dinner', items: ['Lentil soup', 'Chapati (2)', 'Steamed vegetables'], time: '7:30 PM' },
     ];
 
-    const foodDatabase = [
-        { name: 'Banana', calories: 105, protein: 1.3, carbs: 27, fat: 0.4, iron: 0.3, calcium: 5, vitC: 10, vitD: 0, fiber: 3, vitB12: 0, category: 'Fruit', vitamins: ['B6', 'C'] },
-        { name: 'Chicken Breast', calories: 165, protein: 31, carbs: 0, fat: 3.6, iron: 1, calcium: 15, vitC: 0, vitD: 0, fiber: 0, vitB12: 0.3, category: 'Protein', vitamins: ['B6', 'B12'] },
-        { name: 'Brown Rice', calories: 216, protein: 5, carbs: 45, fat: 1.8, iron: 1, calcium: 20, vitC: 0, vitD: 0, fiber: 3.5, vitB12: 0, category: 'Grain', vitamins: ['B1', 'B6'] },
-        { name: 'Spinach', calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, iron: 2.7, calcium: 99, vitC: 28, vitD: 0, fiber: 2.2, vitB12: 0, category: 'Vegetable', vitamins: ['A', 'C', 'K'] },
-        { name: 'Milk (1 cup)', calories: 149, protein: 8, carbs: 12, fat: 8, iron: 0.1, calcium: 276, vitC: 0, vitD: 3, fiber: 0, vitB12: 1.1, category: 'Dairy', vitamins: ['D', 'B12'] },
-        { name: 'Almonds (30g)', calories: 164, protein: 6, carbs: 6, fat: 14, iron: 1, calcium: 76, vitC: 0, vitD: 0, fiber: 3.5, vitB12: 0, category: 'Nuts', vitamins: ['E', 'B2'] },
-        { name: 'Salmon (100g)', calories: 208, protein: 20, carbs: 0, fat: 13, iron: 0.8, calcium: 12, vitC: 0, vitD: 11, fiber: 0, vitB12: 2.8, category: 'Protein', vitamins: ['D', 'B12', 'Omega-3'] },
-        { name: 'Apple', calories: 95, protein: 0.5, carbs: 25, fat: 0.3, iron: 0.2, calcium: 11, vitC: 8, vitD: 0, fiber: 4.4, vitB12: 0, category: 'Fruit', vitamins: ['C'] },
-        { name: 'Egg', calories: 78, protein: 6, carbs: 0.6, fat: 5, iron: 0.9, calcium: 28, vitC: 0, vitD: 1, fiber: 0, vitB12: 0.6, category: 'Protein', vitamins: ['D', 'B12'] },
-        { name: 'Oatmeal', calories: 150, protein: 5, carbs: 27, fat: 3, iron: 1.7, calcium: 20, vitC: 0, vitD: 0, fiber: 4, vitB12: 0, category: 'Grain', vitamins: ['B1', 'B6'] },
-        { name: 'Greek Yogurt', calories: 100, protein: 17, carbs: 6, fat: 0.7, iron: 0.1, calcium: 200, vitC: 0, vitD: 0, fiber: 0, vitB12: 1.3, category: 'Dairy', vitamins: ['B12', 'B2'] },
-        { name: 'Broccoli', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, iron: 1, calcium: 47, vitC: 89, vitD: 0, fiber: 5.1, vitB12: 0, category: 'Vegetable', vitamins: ['C', 'K'] },
-    ];
+    const foodDatabase = useMemo(() => foods.map((food) => ({
+        id: food.id,
+        name: food.name,
+        calories: food.calories,
+        protein: food.protein,
+        carbs: food.carbs,
+        fat: food.fat,
+        iron: food.iron,
+        calcium: food.calcium,
+        vitC: food.vitC,
+        vitD: food.vitD,
+        fiber: food.fiber,
+        vitB12: food.vitB12,
+        category: food.category || 'General',
+        dietType: detectDietType(food)
+    })), [foods]);
 
-    const handleAddMeal = () => {
-        if (selectedMeal) {
-            const food = foodDatabase.find(f => f.name === selectedMeal);
+    const filteredFoods = useMemo(() => foodDatabase.filter((food) => {
+        if (selectedDietType === 'all') return true;
+        return food.dietType === selectedDietType;
+    }), [foodDatabase, selectedDietType]);
+
+    const fruitsFoods = useMemo(() => foodDatabase.filter((food) => /fruit/i.test(String(food.category || ''))), [foodDatabase]);
+    const liquidsFoods = useMemo(() => foodDatabase.filter((food) => /liquid|juice|beverage|drink|milk/i.test(String(food.category || '')) || /juice|smoothie|water|drink|shake|lassi|tea|coffee|milk/i.test(food.name)), [foodDatabase]);
+
+    useEffect(() => {
+        if (selectedMealId && !filteredFoods.some((food) => String(food.id) === String(selectedMealId))) {
+            setSelectedMealId('');
+        }
+    }, [filteredFoods, selectedMealId]);
+
+    const handleAddMeal = async () => {
+        if (selectedMealId) {
+            const food = foodDatabase.find((f) => String(f.id) === String(selectedMealId));
             if (food) {
-                addMeal({ 
-                    time: selectedTime, 
-                    food: food.name, 
+                setAddMealError('');
+                const success = await addMeal({ 
+                    mealTime: selectedTime,
+                    name: food.name,
+                    foodId: food.id,
                     calories: food.calories, 
                     protein: food.protein, 
                     carbs: food.carbs, 
@@ -65,12 +143,159 @@ const DietAnalysis = () => {
                     vitC: food.vitC,
                     vitD: food.vitD,
                     fiber: food.fiber,
-                    vitB12: food.vitB12,
-                    vitamins: food.vitamins 
+                    vitB12: food.vitB12
                 });
-                setSelectedMeal('');
+                if (success) {
+                    setSelectedMealId('');
+                    setAddMealError('');
+                    setReportRefreshKey((prev) => prev + 1);
+                } else {
+                    setAddMealError(contextError || 'Failed to add meal');
+                }
             }
         }
+    };
+
+    const handleAddManualMeal = async () => {
+        if (!manualFoodName.trim() || !manualCalories) {
+            setAddMealError('Manual food name and calories are required');
+            return;
+        }
+
+        const success = await addMeal({
+            mealTime: selectedTime,
+            name: manualFoodName.trim(),
+            calories: Number(manualCalories),
+            protein: Number(manualProtein || 0),
+            carbs: Number(manualCarbs || 0),
+            fat: Number(manualFat || 0)
+        });
+
+        if (success) {
+            setManualFoodName('');
+            setManualCalories('');
+            setManualProtein('');
+            setManualCarbs('');
+            setManualFat('');
+            setAddMealError('');
+            setReportRefreshKey((prev) => prev + 1);
+        } else {
+            setAddMealError(contextError || 'Failed to add manual meal');
+        }
+    };
+
+    const handleSetWater = async (nextValue) => {
+        const safeValue = Math.max(0, Math.min(30, Number(nextValue || 0)));
+        const success = await updateWaterGlasses(safeValue);
+        if (!success) {
+            setAddMealError(contextError || 'Failed to update water');
+            return false;
+        }
+        setAddMealError('');
+        setWaterDraft(String(safeValue));
+        setReportRefreshKey((prev) => prev + 1);
+        return true;
+    };
+
+    const commitWaterDraft = async () => {
+        const parsed = Number(waterDraft);
+        if (!Number.isFinite(parsed)) {
+            setAddMealError('Enter a valid number of glasses');
+            return;
+        }
+        await handleSetWater(parsed);
+    };
+
+    const handleQuickAdd = async (food) => {
+        const success = await addMeal({
+            mealTime: selectedTime,
+            name: food.name,
+            foodId: food.id,
+            calories: food.calories,
+            protein: food.protein,
+            carbs: food.carbs,
+            fat: food.fat,
+            iron: food.iron,
+            calcium: food.calcium,
+            vitC: food.vitC,
+            vitD: food.vitD,
+            fiber: food.fiber,
+            vitB12: food.vitB12
+        });
+        if (!success) {
+            setAddMealError(contextError || 'Failed to add food');
+            return;
+        }
+        setReportRefreshKey((prev) => prev + 1);
+    };
+
+    const printReport = async () => {
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!printWindow) {
+            setAddMealError('Please allow popups to print the report');
+            return;
+        }
+
+        printWindow.document.write('<html><body style="font-family: Arial, sans-serif; padding: 24px;">Preparing report...</body></html>');
+        printWindow.document.close();
+
+        const report = await getDailyReport(reportDate);
+        if (!report) {
+            setAddMealError('Failed to generate report for printing');
+            printWindow.close();
+            return;
+        }
+
+        const rows = (report.meals || []).map((meal) => `
+            <tr>
+                <td>${meal.mealTime || '-'}</td>
+                <td>${meal.name || '-'}</td>
+                <td>${meal.calories || 0}</td>
+                <td>${meal.protein || 0}</td>
+                <td>${meal.carbs || 0}</td>
+                <td>${meal.fat || 0}</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Nutrition Report - ${report.date}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 24px; }
+                        h1, h2 { margin: 0 0 12px; }
+                        .meta { margin-bottom: 16px; color: #555; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+                        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                        th { background: #f1f5f9; }
+                        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+                        .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Complete Daily Nutrition Report</h1>
+                    <div class="meta">Date: ${report.date}</div>
+                    <div class="grid">
+                        <div class="card"><strong>Calories</strong><div>${report.totals?.calories || 0}</div></div>
+                        <div class="card"><strong>Protein</strong><div>${report.totals?.protein || 0} g</div></div>
+                        <div class="card"><strong>Carbs</strong><div>${report.totals?.carbs || 0} g</div></div>
+                        <div class="card"><strong>Fat</strong><div>${report.totals?.fat || 0} g</div></div>
+                        <div class="card"><strong>Fiber</strong><div>${report.totals?.fiber || 0} g</div></div>
+                        <div class="card"><strong>Water</strong><div>${report.waterGlasses || 0} glasses</div></div>
+                    </div>
+                    <h2>Meals</h2>
+                    <table>
+                        <thead>
+                            <tr><th>Time</th><th>Food</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>
+                        </thead>
+                        <tbody>${rows || '<tr><td colspan="6">No meals logged</td></tr>'}</tbody>
+                    </table>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
     };
 
     return (
@@ -88,6 +313,20 @@ const DietAnalysis = () => {
                 <div className="diet-add-section">
                     <div className="add-food-card">
                         <h3>📝 Log a Meal</h3>
+                        {(foodsError || addMealError) && <div style={{color: '#ef4444', marginBottom: '12px', fontSize: '14px'}}>❌ {foodsError || addMealError}</div>}
+                        <div className="diet-filter-row">
+                            {['all', 'veg', 'nonveg'].map((type) => (
+                                <button
+                                    key={type}
+                                    type="button"
+                                    className={`diet-filter-btn ${selectedDietType === type ? 'active' : ''}`}
+                                    onClick={() => setSelectedDietType(type)}
+                                >
+                                    {type === 'all' ? 'All Foods' : type === 'veg' ? 'Veg' : 'Non-Veg'}
+                                </button>
+                            ))}
+                            <span className="diet-filter-count">{filteredFoods.length} items available</span>
+                        </div>
                         <div className="add-food-row">
                             <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className="food-select time-select">
                                 <option value="Breakfast">Breakfast</option>
@@ -95,16 +334,25 @@ const DietAnalysis = () => {
                                 <option value="Snack">Snack</option>
                                 <option value="Dinner">Dinner</option>
                             </select>
-                            <select value={selectedMeal} onChange={(e) => setSelectedMeal(e.target.value)} className="food-select">
-                                <option value="">Select food from database...</option>
-                                {foodDatabase.map((f, i) => (
-                                    <option key={i} value={f.name}>{f.name} — {f.calories} kcal, {f.protein}g protein</option>
+                            <select value={selectedMealId} onChange={(e) => setSelectedMealId(e.target.value)} className="food-select">
+                                <option value="">{loadingFoods ? 'Loading foods...' : `Select ${selectedDietType === 'all' ? '' : `${selectedDietType} `}food from database...`}</option>
+                                {filteredFoods.map((f) => (
+                                    <option key={f.id} value={f.id}>{f.name} — {f.calories} kcal, {f.protein}g protein, {f.dietType === 'nonveg' ? 'Non-Veg' : 'Veg'}</option>
                                 ))}
                             </select>
                             <button className="btn-primary" onClick={handleAddMeal}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                                 Add Meal
                             </button>
+                        </div>
+
+                        <div className="manual-entry-grid">
+                            <input value={manualFoodName} onChange={(e) => setManualFoodName(e.target.value)} placeholder="Custom food name" className="food-select" />
+                            <input value={manualCalories} onChange={(e) => setManualCalories(e.target.value)} placeholder="Calories" type="number" className="food-select" />
+                            <input value={manualProtein} onChange={(e) => setManualProtein(e.target.value)} placeholder="Protein (g)" type="number" className="food-select" />
+                            <input value={manualCarbs} onChange={(e) => setManualCarbs(e.target.value)} placeholder="Carbs (g)" type="number" className="food-select" />
+                            <input value={manualFat} onChange={(e) => setManualFat(e.target.value)} placeholder="Fat (g)" type="number" className="food-select" />
+                            <button className="btn-secondary" onClick={handleAddManualMeal}>Add Custom Meal</button>
                         </div>
                     </div>
                 </div>
@@ -131,6 +379,88 @@ const DietAnalysis = () => {
                         <div className="tc-value">{totals.fat}g</div>
                         <div className="tc-label">Fats</div>
                     </div>
+                    <div className="total-card">
+                        <div className="tc-icon">💧</div>
+                        <div className="tc-value">{waterGlasses}</div>
+                        <div className="tc-label">Water Glasses</div>
+                    </div>
+                </div>
+
+                <div className="water-controls">
+                    <h3>Hydration Tracker</h3>
+                    <div className="water-actions">
+                        <button className="btn-secondary" onClick={() => handleSetWater(waterGlasses - 1)}>-1 Glass</button>
+                        <input
+                            className="food-select water-input"
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={waterDraft}
+                            onChange={(e) => setWaterDraft(e.target.value)}
+                        />
+                        <button className="btn-primary" onClick={() => handleSetWater(waterGlasses + 1)}>+1 Glass</button>
+                        <button className="btn-secondary" onClick={commitWaterDraft}>Update Water</button>
+                    </div>
+                </div>
+
+                <div className="quick-category-grid">
+                    <div className="dash-card">
+                        <div className="card-header"><h3>Fruits Block</h3><span className="card-badge green">{fruitsFoods.length}</span></div>
+                        <div className="quick-list">
+                            {fruitsFoods.slice(0, 10).map((food) => (
+                                <button key={food.id} type="button" className="quick-item" onClick={() => handleQuickAdd(food)}>
+                                    <span>{food.name}</span>
+                                    <small>{food.calories} kcal</small>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="dash-card">
+                        <div className="card-header"><h3>Liquids/Juices Block</h3><span className="card-badge green">{liquidsFoods.length}</span></div>
+                        <div className="quick-list">
+                            {liquidsFoods.slice(0, 10).map((food) => (
+                                <button key={food.id} type="button" className="quick-item" onClick={() => handleQuickAdd(food)}>
+                                    <span>{food.name}</span>
+                                    <small>{food.calories} kcal</small>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="dash-card report-card">
+                    <div className="card-header">
+                        <h3>Complete Daily Report</h3>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button className="btn-secondary" onClick={loadReport}>Refresh</button>
+                            <button className="btn-secondary" onClick={printReport}>Print Report</button>
+                        </div>
+                    </div>
+                    <div className="report-controls">
+                        <label htmlFor="reportDate">Date</label>
+                        <input id="reportDate" type="date" className="food-select" value={reportDate} onChange={(e) => setReportDate(e.target.value)} />
+                        <span className="diet-filter-count">Status: {loadingReport ? 'Updating...' : `Updated at ${reportLastUpdated || '-'}`}</span>
+                    </div>
+                    {loadingReport ? (
+                        <p>Loading report...</p>
+                    ) : (
+                        <div className="report-grid">
+                            <div className="report-pill">Meals: {dailyReport?.meals?.length || 0}</div>
+                            <div className="report-pill">Calories: {dailyReport?.totals?.calories || 0}</div>
+                            <div className="report-pill">Protein: {dailyReport?.totals?.protein || 0} g</div>
+                            <div className="report-pill">Carbs: {dailyReport?.totals?.carbs || 0} g</div>
+                            <div className="report-pill">Fat: {dailyReport?.totals?.fat || 0} g</div>
+                            <div className="report-pill">Iron: {dailyReport?.totals?.iron || 0} mg</div>
+                            <div className="report-pill">Calcium: {dailyReport?.totals?.calcium || 0} mg</div>
+                            <div className="report-pill">Vit C: {dailyReport?.totals?.vitC || 0} mg</div>
+                            <div className="report-pill">Vit D: {dailyReport?.totals?.vitD || 0}</div>
+                            <div className="report-pill">Fiber: {dailyReport?.totals?.fiber || 0} g</div>
+                            <div className="report-pill">Vit B12: {dailyReport?.totals?.vitB12 || 0}</div>
+                            <div className="report-pill">Water: {dailyReport?.waterGlasses || 0} glasses</div>
+                            <div className="report-pill">Fruits: {dailyReport?.fruits?.length || 0}</div>
+                            <div className="report-pill">Liquids: {dailyReport?.liquids?.length || 0}</div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="diet-grid">
@@ -159,13 +489,22 @@ const DietAnalysis = () => {
                                     <tbody>
                                         {meals.map((m) => (
                                             <tr key={m.id}>
-                                                <td><span className="meal-time">{m.time}</span></td>
-                                                <td>{m.food}</td>
+                                                <td><span className="meal-time">{m.time || m.mealTime || '-'}</span></td>
+                                                <td>{m.food || m.name}</td>
                                                 <td><strong>{m.calories}</strong> kcal</td>
                                                 <td>{m.protein}g</td>
                                                 <td>
                                                     <div className="vitamin-tags">
-                                                        {m.vitamins && m.vitamins.map((v, j) => <span key={j} className="vit-tag">{v}</span>)}
+                                                        {(m.vitC > 0 || m.vitD > 0 || m.vitB12 > 0 || m.fiber > 0) ? (
+                                                            <>
+                                                                {m.vitC > 0 && <span className="vit-tag">Vit C</span>}
+                                                                {m.vitD > 0 && <span className="vit-tag">Vit D</span>}
+                                                                {m.vitB12 > 0 && <span className="vit-tag">B12</span>}
+                                                                {m.fiber > 0 && <span className="vit-tag">Fiber</span>}
+                                                            </>
+                                                        ) : (
+                                                            <span className="vit-tag">-</span>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

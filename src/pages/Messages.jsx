@@ -1,34 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { useNutrition } from '../context/NutritionContext';
 import './Messages.css';
 
 const Messages = () => {
-    const { getSortedDoctors, currentDoctor, setCurrentDoctor, sendMessage, getMessages, rateMessage, userProfile } = useNutrition();
+    const { getSortedDoctors, currentDoctor, setCurrentDoctor, sendMessage, getMessages, rateMessage, error: contextError } = useNutrition();
     const [newMessage, setNewMessage] = useState('');
     const [ratingModal, setRatingModal] = useState({ show: false, messageId: null });
     const [selectedRating, setSelectedRating] = useState(0);
     const [feedback, setFeedback] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const doctors = getSortedDoctors();
-    const messages = currentDoctor ? getMessages(currentDoctor.id) : [];
 
-    const handleSendMessage = () => {
+    // Load messages when doctor is selected
+    useEffect(() => {
+        if (currentDoctor) {
+            loadMessages();
+        } else {
+            setMessages([]);
+        }
+    }, [currentDoctor]);
+
+    const loadMessages = async () => {
+        try {
+            setLoading(true);
+            const fetchedMessages = await getMessages(currentDoctor.id);
+            setMessages(fetchedMessages || []);
+        } catch (error) {
+            console.error('Failed to load messages:', error);
+            alert('❌ Failed to load messages');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSendMessage = async () => {
         if (newMessage.trim() && currentDoctor) {
-            sendMessage(currentDoctor.id, newMessage, true);
-            setNewMessage('');
-            // Simulate doctor reply after a short delay
-            setTimeout(() => {
-                const replies = [
-                    "Thank you for your question! I'll review your details and get back to you shortly.",
-                    "That's a great question about nutrition. Let me provide some guidance.",
-                    "I understand your concern. Here's what I recommend based on your profile.",
-                    "Based on your dietary needs, I suggest focusing on balanced meals throughout the day.",
-                    "I've noted your query. Let's work together to improve your nutrition goals!"
-                ];
-                const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                sendMessage(currentDoctor.id, randomReply, false);
-            }, 1500);
+            const success = await sendMessage(currentDoctor.id, newMessage);
+            if (success) {
+                setNewMessage('');
+                await loadMessages();
+            } else {
+                alert(`❌ Failed to send message: ${contextError || 'Unknown error'}`);
+            }
         }
     };
 
@@ -42,10 +58,16 @@ const Messages = () => {
         setFeedback('');
     };
 
-    const submitRating = () => {
+    const submitRating = async () => {
         if (selectedRating > 0 && currentDoctor) {
-            rateMessage(currentDoctor.id, ratingModal.messageId, selectedRating, feedback);
-            setRatingModal({ show: false, messageId: null });
+            try {
+                await rateMessage(currentDoctor.id, ratingModal.messageId, selectedRating, feedback);
+                setRatingModal({ show: false, messageId: null });
+                await loadMessages(); // Reload to show updated rating
+            } catch (error) {
+                console.error('Failed to submit rating:', error);
+                alert('❌ Failed to submit rating');
+            }
         }
     };
 
@@ -131,6 +153,14 @@ const Messages = () => {
                                     <div className="doctor-stats">
                                         {renderStars(Math.round(currentDoctor.rating))}
                                         <span>{currentDoctor.rating} rating</span>
+                                        <button 
+                                            className="refresh-btn" 
+                                            onClick={loadMessages}
+                                            disabled={loading}
+                                            title="Refresh messages"
+                                        >
+                                            {loading ? '⏳ Loading...' : '🔄'}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -144,7 +174,7 @@ const Messages = () => {
                                             <div key={msg.id} className={`chat-msg ${msg.from}`}>
                                                 <div className="msg-bubble">
                                                     <p>{msg.text}</p>
-                                                    <span className="msg-time">{msg.time}</span>
+                                                    <span className="msg-time">{msg.time || '-'}</span>
                                                 </div>
                                                 {msg.from === 'doctor' && !msg.rated && (
                                                     <button 

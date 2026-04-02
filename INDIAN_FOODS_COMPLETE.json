@@ -1,0 +1,145 @@
+// COMPLETE INDIAN FOOD DATASET - JSON FORMAT
+// Use this file to generate and import foods into MySQL database
+
+const INDIAN_FOODS_DATASET = {
+  "states": [
+    {
+      "state": "Andhra Pradesh",
+      "meals": {
+        "breakfast": [
+          { "name": "Upma", "calories": 200, "protein": 6, "carbs": 32, "fat": 5, "iron": 2.5, "calcium": 60, "vit_c": 15, "vit_d": 0.5, "fiber": 2, "vit_b12": 0.1 },
+          { "name": "Idli", "calories": 140, "protein": 4, "carbs": 28, "fat": 1, "iron": 1.5, "calcium": 45, "vit_c": 8, "vit_d": 0.3, "fiber": 1.5, "vit_b12": 0.05 },
+          { "name": "Dosa", "calories": 180, "protein": 5, "carbs": 30, "fat": 5, "iron": 2, "calcium": 50, "vit_c": 10, "vit_d": 0.4, "fiber": 2, "vit_b12": 0.1 },
+          { "name": "Vada", "calories": 220, "protein": 7, "carbs": 25, "fat": 10, "iron": 2, "calcium": 40, "vit_c": 5, "vit_d": 0.2, "fiber": 1, "vit_b12": 0.05 },
+          { "name": "Pesarattu", "calories": 190, "protein": 8, "carbs": 28, "fat": 5, "iron": 2.2, "calcium": 55, "vit_c": 12, "vit_d": 0.3, "fiber": 2.5, "vit_b12": 0.15 },
+          { "name": "Gunthalata", "calories": 160, "protein": 5, "carbs": 26, "fat": 4, "iron": 1.8, "calcium": 35, "vit_c": 20, "vit_d": 0.4, "fiber": 3, "vit_b12": 0.1 },
+          { "name": "Aloo Paratha", "calories": 250, "protein": 7, "carbs": 35, "fat": 8, "iron": 2, "calcium": 60, "vit_c": 5, "vit_d": 0.2, "fiber": 1.5, "vit_b12": 0.05 },
+          { "name": "Puri Bhaji", "calories": 280, "protein": 8, "carbs": 40, "fat": 10, "iron": 2.5, "calcium": 70, "vit_c": 18, "vit_d": 0.3, "fiber": 2, "vit_b12": 0.1 },
+          { "name": "Semolina Puttu", "calories": 170, "protein": 4, "carbs": 32, "fat": 3, "iron": 1.5, "calcium": 40, "vit_c": 6, "vit_d": 0.2, "fiber": 3, "vit_b12": 0.05 },
+          { "name": "Chikhalwali", "calories": 150, "protein": 4, "carbs": 28, "fat": 2, "iron": 1, "calcium": 30, "vit_c": 15, "vit_d": 0.3, "fiber": 2, "vit_b12": 0.08 },
+          { "name": "Minappu", "calories": 140, "protein": 12, "carbs": 18, "fat": 2, "iron": 3, "calcium": 80, "vit_c": 10, "vit_d": 0.5, "fiber": 1.5, "vit_b12": 0.3 },
+          { "name": "Gongura Juice", "calories": 50, "protein": 2, "carbs": 8, "fat": 0.5, "iron": 2.5, "calcium": 150, "vit_c": 35, "vit_d": 0.2, "fiber": 2, "vit_b12": 0.05 },
+          { "name": "Puttu", "calories": 120, "protein": 3, "carbs": 25, "fat": 1, "iron": 1, "calcium": 25, "vit_c": 5, "vit_d": 0.2, "fiber": 2.5, "vit_b12": 0.03 },
+          { "name": "Bajra Roti", "calories": 200, "protein": 6, "carbs": 35, "fat": 3, "iron": 4, "calcium": 80, "vit_c": 2, "vit_d": 0.1, "fiber": 3.5, "vit_b12": 0.08 }
+        ],
+        "lunch": [
+          { "name": "Gongura Pulao", "calories": 320, "protein": 8, "carbs": 48, "fat": 8, "iron": 3, "calcium": 60, "vit_c": 40, "vit_d": 0.3, "fiber": 2, "vit_b12": 0.1 },
+          { "name": "Hyderabadi Biryani", "calories": 380, "protein": 15, "carbs": 45, "fat": 12, "iron": 2.5, "calcium": 50, "vit_c": 8, "vit_d": 0.5, "fiber": 1.5, "vit_b12": 0.4 },
+          { "name": "Dhal Fry", "calories": 220, "protein": 10, "carbs": 30, "fat": 5, "iron": 4, "calcium": 80, "vit_c": 15, "vit_d": 0.2, "fiber": 4.5, "vit_b12": 0.1 },
+          { "name": "Chikhalwali Meat Curry", "calories": 350, "protein": 28, "carbs": 12, "fat": 18, "iron": 3.5, "calcium": 40, "vit_c": 10, "vit_d": 0.6, "fiber": 0.5, "vit_b12": 0.8 },
+          { "name": "Andhra Fish Curry", "calories": 280, "protein": 32, "carbs": 8, "fat": 12, "iron": 3, "calcium": 120, "vit_c": 25, "vit_d": 1.2, "fiber": 0.5, "vit_b12": 1.5 },
+          { "name": "Karam Dhal", "calories": 200, "protein": 12, "carbs": 22, "fat": 6, "iron": 5, "calcium": 100, "vit_c": 12, "vit_d": 0.3, "fiber": 4, "vit_b12": 0.15 },
+          { "name": "Beerakaya Fry", "calories": 150, "protein": 5, "carbs": 18, "fat": 6, "iron": 2, "calcium": 40, "vit_c": 20, "vit_d": 0.2, "fiber": 3.5, "vit_b12": 0.05 },
+          { "name": "Kathirikkai Bajji", "calories": 180, "protein": 4, "carbs": 20, "fat": 8, "iron": 1.5, "calcium": 35, "vit_c": 8, "vit_d": 0.15, "fiber": 2.5, "vit_b12": 0.03 },
+          { "name": "Avial", "calories": 180, "protein": 6, "carbs": 25, "fat": 6, "iron": 2.5, "calcium": 70, "vit_c": 30, "vit_d": 0.2, "fiber": 3.5, "vit_b12": 0.08 },
+          { "name": "Chikhalwali Rice", "calories": 280, "protein": 6, "carbs": 52, "fat": 2, "iron": 1.5, "calcium": 20, "vit_c": 0, "vit_d": 0, "fiber": 1, "vit_b12": 0 },
+          { "name": "Paneer Curry", "calories": 280, "protein": 20, "carbs": 15, "fat": 15, "iron": 1.5, "calcium": 300, "vit_c": 10, "vit_d": 0.3, "fiber": 1, "vit_b12": 0.2 },
+          { "name": "Sambar", "calories": 120, "protein": 6, "carbs": 18, "fat": 2, "iron": 3, "calcium": 80, "vit_c": 20, "vit_d": 0.1, "fiber": 3, "vit_b12": 0.05 },
+          { "name": "Rasam", "calories": 60, "protein": 2, "carbs": 10, "fat": 1, "iron": 1, "calcium": 30, "vit_c": 15, "vit_d": 0.05, "fiber": 1.5, "vit_b12": 0.02 },
+          { "name": "Buttermilk With Spices", "calories": 80, "protein": 4, "carbs": 6, "fat": 3, "iron": 0.2, "calcium": 150, "vit_c": 5, "vit_d": 0.2, "fiber": 0, "vit_b12": 0.3 }
+        ],
+        "snacks": [
+          { "name": "Chakli", "calories": 180, "protein": 4, "carbs": 22, "fat": 8, "iron": 1, "calcium": 40, "vit_c": 2, "vit_d": 0.1, "fiber": 0.5, "vit_b12": 0.05 },
+          { "name": "Murukku", "calories": 160, "protein": 3, "carbs": 20, "fat": 7, "iron": 1.2, "calcium": 35, "vit_c": 1, "vit_d": 0.08, "fiber": 0.8, "vit_b12": 0.03 },
+          { "name": "Mixture", "calories": 200, "protein": 5, "carbs": 22, "fat": 9, "iron": 1.5, "calcium": 50, "vit_c": 0, "vit_d": 0.1, "fiber": 1, "vit_b12": 0.05 },
+          { "name": "Chikhalwali Chips", "calories": 140, "protein": 2, "carbs": 18, "fat": 6, "iron": 1, "calcium": 10, "vit_c": 8, "vit_d": 0.05, "fiber": 1.5, "vit_b12": 0 },
+          { "name": "Peanut Laddu", "calories": 220, "protein": 8, "carbs": 20, "fat": 12, "iron": 2.5, "calcium": 60, "vit_c": 2, "vit_d": 0.2, "fiber": 2, "vit_b12": 0.1 }
+        ],
+        "dinner": [
+          { "name": "Chikhalwali Vegetable Stew", "calories": 200, "protein": 8, "carbs": 28, "fat": 5, "iron": 2.5, "calcium": 70, "vit_c": 35, "vit_d": 0.3, "fiber": 4, "vit_b12": 0.1 },
+          { "name": "Steamed Rice", "calories": 260, "protein": 4, "carbs": 58, "fat": 0.5, "iron": 0.8, "calcium": 15, "vit_c": 0, "vit_d": 0, "fiber": 0.5, "vit_b12": 0 },
+          { "name": "Andhra Pappu", "calories": 180, "protein": 10, "carbs": 28, "fat": 2, "iron": 4, "calcium": 100, "vit_c": 10, "vit_d": 0.2, "fiber": 4.5, "vit_b12": 0.12 }
+        ]
+      }
+    },
+    {
+      "state": "Telangana",
+      "meals": {
+        "breakfast": [
+          { "name": "Haleem", "calories": 280, "protein": 16, "carbs": 32, "fat": 8, "iron": 4, "calcium": 80, "vit_c": 10, "vit_d": 0.4, "fiber": 2, "vit_b12": 0.5 },
+          { "name": "Puri", "calories": 160, "protein": 3, "carbs": 22, "fat": 6, "iron": 0.8, "calcium": 20, "vit_c": 0, "vit_d": 0.05, "fiber": 0.5, "vit_b12": 0 }
+        ],
+        "lunch": [
+          { "name": "Hyderabadi Biryani Special", "calories": 400, "protein": 16, "carbs": 47, "fat": 14, "iron": 2.8, "calcium": 55, "vit_c": 10, "vit_d": 0.6, "fiber": 2, "vit_b12": 0.5 }
+        ],
+        "snacks": [
+          { "name": "Telangana Khichdi", "calories": 150, "protein": 4, "carbs": 28, "fat": 2, "iron": 1, "calcium": 40, "vit_c": 0, "vit_d": 0.05, "fiber": 1.5, "vit_b12": 0.05 }
+        ],
+        "dinner": [
+          { "name": "Telangana Dal With Rice", "calories": 280, "protein": 10, "carbs": 50, "fat": 3, "iron": 3.5, "calcium": 80, "vit_c": 10, "vit_d": 0.15, "fiber": 3, "vit_b12": 0.1 }
+        ]
+      }
+    },
+    {
+      "state": "Tamil Nadu",  
+      "meals": {
+        "breakfast": [
+          { "name": "Pongal", "calories": 220, "protein": 7, "carbs": 38, "fat": 4, "iron": 1.5, "calcium": 50, "vit_c": 5, "vit_d": 0.2, "fiber": 1.5, "vit_b12": 0.1 }
+        ],
+        "lunch": [
+          { "name": "Sambar Rice", "calories": 280, "protein": 6, "carbs": 50, "fat": 4, "iron": 2.5, "calcium": 60, "vit_c": 20, "vit_d": 0.2, "fiber": 3, "vit_b12": 0.08 }
+        ],
+        "snacks": [
+          { "name": "Tamil Nadu Snack", "calories": 150, "protein": 4, "carbs": 22, "fat": 4, "iron": 1.5, "calcium": 40, "vit_c": 10, "vit_d": 0.1, "fiber": 1.5, "vit_b12": 0.05 }
+        ],
+        "dinner": [
+          { "name": "Tamil Nadu Dinner", "calories": 200, "protein": 6, "carbs": 35, "fat": 4, "iron": 2, "calcium": 60, "vit_c": 15, "vit_d": 0.15, "fiber": 2, "vit_b12": 0.08 }
+        ]
+      }
+    },
+    {
+      "state": "Pan India Fruits And Juices",
+      "meals": {
+        "fruits": [
+          { "name": "Mango", "calories": 99, "protein": 1.4, "carbs": 25, "fat": 0.6, "iron": 0.2, "calcium": 11, "vit_c": 36.4, "vit_d": 0, "fiber": 2.6, "vit_b12": 0 },
+          { "name": "Banana", "calories": 105, "protein": 1.3, "carbs": 27, "fat": 0.3, "iron": 0.3, "calcium": 6, "vit_c": 10.3, "vit_d": 0, "fiber": 3.1, "vit_b12": 0 },
+          { "name": "Apple", "calories": 95, "protein": 0.5, "carbs": 25, "fat": 0.3, "iron": 0.2, "calcium": 11, "vit_c": 8.4, "vit_d": 0, "fiber": 4.4, "vit_b12": 0 },
+          { "name": "Orange", "calories": 62, "protein": 1.2, "carbs": 15.4, "fat": 0.2, "iron": 0.1, "calcium": 52, "vit_c": 69.7, "vit_d": 0, "fiber": 3.1, "vit_b12": 0 },
+          { "name": "Papaya", "calories": 55, "protein": 0.9, "carbs": 14, "fat": 0.3, "iron": 0.3, "calcium": 33, "vit_c": 60.9, "vit_d": 0, "fiber": 2.5, "vit_b12": 0 },
+          { "name": "Guava", "calories": 68, "protein": 2.6, "carbs": 14, "fat": 1, "iron": 0.3, "calcium": 18, "vit_c": 228, "vit_d": 0, "fiber": 5.4, "vit_b12": 0 },
+          { "name": "Pomegranate", "calories": 83, "protein": 1.7, "carbs": 19, "fat": 1.2, "iron": 0.3, "calcium": 10, "vit_c": 10.2, "vit_d": 0, "fiber": 4, "vit_b12": 0 },
+          { "name": "Watermelon", "calories": 46, "protein": 0.9, "carbs": 11.5, "fat": 0.2, "iron": 0.2, "calcium": 11, "vit_c": 12.3, "vit_d": 0, "fiber": 0.6, "vit_b12": 0 },
+          { "name": "Muskmelon", "calories": 53, "protein": 1.3, "carbs": 13, "fat": 0.3, "iron": 0.2, "calcium": 9, "vit_c": 36.7, "vit_d": 0, "fiber": 1.4, "vit_b12": 0 },
+          { "name": "Sweet Lime", "calories": 43, "protein": 0.8, "carbs": 9.3, "fat": 0.3, "iron": 0.1, "calcium": 33, "vit_c": 50, "vit_d": 0, "fiber": 2.8, "vit_b12": 0 },
+          { "name": "Sapota", "calories": 83, "protein": 0.4, "carbs": 20, "fat": 1.1, "iron": 0.8, "calcium": 21, "vit_c": 14.7, "vit_d": 0, "fiber": 5.3, "vit_b12": 0 },
+          { "name": "Custard Apple", "calories": 101, "protein": 2.1, "carbs": 25, "fat": 0.6, "iron": 0.7, "calcium": 24, "vit_c": 36, "vit_d": 0, "fiber": 2.4, "vit_b12": 0 },
+          { "name": "Litchi", "calories": 66, "protein": 0.8, "carbs": 16.5, "fat": 0.4, "iron": 0.3, "calcium": 5, "vit_c": 71.5, "vit_d": 0, "fiber": 1.3, "vit_b12": 0 },
+          { "name": "Pineapple", "calories": 82, "protein": 0.9, "carbs": 22, "fat": 0.2, "iron": 0.3, "calcium": 21, "vit_c": 78.9, "vit_d": 0, "fiber": 2.3, "vit_b12": 0 },
+          { "name": "Grapes", "calories": 69, "protein": 0.7, "carbs": 18, "fat": 0.2, "iron": 0.4, "calcium": 10, "vit_c": 3.2, "vit_d": 0, "fiber": 0.9, "vit_b12": 0 },
+          { "name": "Strawberry", "calories": 49, "protein": 1, "carbs": 12, "fat": 0.5, "iron": 0.4, "calcium": 24, "vit_c": 89.4, "vit_d": 0, "fiber": 3, "vit_b12": 0 },
+          { "name": "Jamun", "calories": 60, "protein": 0.7, "carbs": 15, "fat": 0.2, "iron": 1.4, "calcium": 19, "vit_c": 18, "vit_d": 0, "fiber": 0.6, "vit_b12": 0 },
+          { "name": "Amla", "calories": 44, "protein": 0.9, "carbs": 10.2, "fat": 0.6, "iron": 1.2, "calcium": 25, "vit_c": 252, "vit_d": 0, "fiber": 4.3, "vit_b12": 0 },
+          { "name": "Pear", "calories": 101, "protein": 0.6, "carbs": 27, "fat": 0.2, "iron": 0.2, "calcium": 16, "vit_c": 7.6, "vit_d": 0, "fiber": 5.5, "vit_b12": 0 },
+          { "name": "Kiwi", "calories": 64, "protein": 1.2, "carbs": 15.4, "fat": 0.6, "iron": 0.3, "calcium": 34, "vit_c": 92.7, "vit_d": 0, "fiber": 3.1, "vit_b12": 0 }
+        ],
+        "juices": [
+          { "name": "Fresh Orange Juice", "calories": 110, "protein": 2, "carbs": 25, "fat": 0.5, "iron": 0.5, "calcium": 27, "vit_c": 93, "vit_d": 0, "fiber": 0.5, "vit_b12": 0 },
+          { "name": "Mosambi Juice", "calories": 95, "protein": 1.5, "carbs": 22, "fat": 0.3, "iron": 0.4, "calcium": 24, "vit_c": 50, "vit_d": 0, "fiber": 0.4, "vit_b12": 0 },
+          { "name": "Sugarcane Juice", "calories": 120, "protein": 0.2, "carbs": 30, "fat": 0.1, "iron": 1.1, "calcium": 11, "vit_c": 4, "vit_d": 0, "fiber": 0.2, "vit_b12": 0 },
+          { "name": "Watermelon Juice", "calories": 71, "protein": 1.4, "carbs": 17, "fat": 0.3, "iron": 0.4, "calcium": 16, "vit_c": 18, "vit_d": 0, "fiber": 0.4, "vit_b12": 0 },
+          { "name": "Pomegranate Juice", "calories": 134, "protein": 1, "carbs": 33, "fat": 0.4, "iron": 0.6, "calcium": 27, "vit_c": 17, "vit_d": 0, "fiber": 0.2, "vit_b12": 0 },
+          { "name": "Mango Juice", "calories": 128, "protein": 1, "carbs": 31, "fat": 0.6, "iron": 0.5, "calcium": 20, "vit_c": 36, "vit_d": 0, "fiber": 0.6, "vit_b12": 0 },
+          { "name": "Guava Juice", "calories": 112, "protein": 2.2, "carbs": 24, "fat": 0.8, "iron": 0.7, "calcium": 30, "vit_c": 125, "vit_d": 0, "fiber": 1.2, "vit_b12": 0 },
+          { "name": "Amla Juice", "calories": 35, "protein": 0.5, "carbs": 8, "fat": 0.1, "iron": 0.9, "calcium": 18, "vit_c": 180, "vit_d": 0, "fiber": 0.8, "vit_b12": 0 },
+          { "name": "Coconut Water", "calories": 44, "protein": 1.7, "carbs": 10.4, "fat": 0.2, "iron": 0.3, "calcium": 58, "vit_c": 2.4, "vit_d": 0, "fiber": 2.6, "vit_b12": 0 },
+          { "name": "Jaljeera", "calories": 38, "protein": 0.6, "carbs": 8.5, "fat": 0.2, "iron": 0.5, "calcium": 20, "vit_c": 6, "vit_d": 0, "fiber": 0.7, "vit_b12": 0 },
+          { "name": "Nimbu Pani", "calories": 40, "protein": 0.2, "carbs": 10, "fat": 0.1, "iron": 0.3, "calcium": 10, "vit_c": 18, "vit_d": 0, "fiber": 0.4, "vit_b12": 0 },
+          { "name": "Buttermilk", "calories": 99, "protein": 3.3, "carbs": 12, "fat": 3.4, "iron": 0.1, "calcium": 116, "vit_c": 0, "vit_d": 1, "fiber": 0, "vit_b12": 0.5 },
+          { "name": "Sweet Lassi", "calories": 180, "protein": 6, "carbs": 28, "fat": 5, "iron": 0.2, "calcium": 220, "vit_c": 2, "vit_d": 0.8, "fiber": 0, "vit_b12": 0.8 },
+          { "name": "Salt Lassi", "calories": 125, "protein": 5, "carbs": 14, "fat": 4.5, "iron": 0.2, "calcium": 200, "vit_c": 2, "vit_d": 0.8, "fiber": 0, "vit_b12": 0.8 },
+          { "name": "Mango Lassi", "calories": 210, "protein": 6, "carbs": 34, "fat": 5.5, "iron": 0.3, "calcium": 220, "vit_c": 18, "vit_d": 0.8, "fiber": 0.8, "vit_b12": 0.9 },
+          { "name": "Rose Milk", "calories": 190, "protein": 6, "carbs": 30, "fat": 5.8, "iron": 0.2, "calcium": 230, "vit_c": 1, "vit_d": 1, "fiber": 0, "vit_b12": 1 },
+          { "name": "Badam Milk", "calories": 220, "protein": 8, "carbs": 24, "fat": 10, "iron": 1.2, "calcium": 280, "vit_c": 1, "vit_d": 1.2, "fiber": 1.2, "vit_b12": 1.1 },
+          { "name": "Sattu Drink", "calories": 150, "protein": 7, "carbs": 22, "fat": 3, "iron": 2.1, "calcium": 40, "vit_c": 2, "vit_d": 0, "fiber": 3.5, "vit_b12": 0 },
+          { "name": "Tender Coconut Lemon Drink", "calories": 55, "protein": 1.2, "carbs": 12, "fat": 0.2, "iron": 0.3, "calcium": 45, "vit_c": 10, "vit_d": 0, "fiber": 0.5, "vit_b12": 0 },
+          { "name": "Mixed Fruit Juice", "calories": 140, "protein": 1.5, "carbs": 34, "fat": 0.5, "iron": 0.6, "calcium": 30, "vit_c": 30, "vit_d": 0, "fiber": 0.7, "vit_b12": 0 }
+        ]
+      }
+    }
+  ]
+};
+
+// Export for use in Node.js or browser
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = INDIAN_FOODS_DATASET;
+}

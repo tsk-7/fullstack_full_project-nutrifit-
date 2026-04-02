@@ -1,56 +1,89 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import './Messages.css';
 
 const AdminMessages = () => {
-    const [selectedUser, setSelectedUser] = useState(0);
-    const [newMessage, setNewMessage] = useState('');
+    const [selectedConversation, setSelectedConversation] = useState('');
+    const [allMessages, setAllMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const conversations = [
-        {
-            id: 0, name: 'Priya Sharma', avatar: 'PS', lastMsg: 'Should I give her supplements?', time: '11:00 AM', unread: 2,
-            messages: [
-                { id: 1, from: 'user', text: 'Hi! I need help creating a diet plan for my 10-year-old child.', time: '10:35 AM' },
-                { id: 2, from: 'admin', text: 'I\'d be happy to help! Based on your child\'s profile, I can see the iron levels are below optimal. Let me create a customized plan.', time: '10:42 AM' },
-                { id: 3, from: 'admin', text: 'I\'ve updated the diet plan in your dashboard with iron-rich foods.', time: '10:45 AM' },
-                { id: 4, from: 'user', text: 'That\'s very helpful! Should I also give her supplements?', time: '11:00 AM' },
-            ]
-        },
-        {
-            id: 1, name: 'Rahul Patel', avatar: 'RP', lastMsg: 'Can you update my plan?', time: 'Yesterday', unread: 1,
-            messages: [
-                { id: 1, from: 'user', text: 'Hi, I want to adjust my diet plan for more protein. I started gym recently.', time: 'Yesterday' },
-                { id: 2, from: 'admin', text: 'Sure! I\'ll add more protein-rich options to your plan.', time: 'Yesterday' },
-                { id: 3, from: 'user', text: 'Can you update my plan for next week too?', time: 'Yesterday' },
-            ]
-        },
-        {
-            id: 2, name: 'Sneha Joshi', avatar: 'SJ', lastMsg: 'Thank you for the advice!', time: 'Feb 17', unread: 0,
-            messages: [
-                { id: 1, from: 'user', text: 'I have low iron and B12. What foods should I eat?', time: 'Feb 17' },
-                { id: 2, from: 'admin', text: 'For iron, include spinach, lentils, and red meat. For B12, eat eggs, dairy, and fortified cereals.', time: 'Feb 17' },
-                { id: 3, from: 'user', text: 'Thank you for the advice!', time: 'Feb 17' },
-            ]
-        },
-    ];
+    const authHeaders = useMemo(() => {
+        try {
+            const tokenRaw = localStorage.getItem('nutrifit_token');
+            const token = tokenRaw ? JSON.parse(tokenRaw) : null;
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        } catch {
+            return {};
+        }
+    }, []);
 
-    const currentConversation = conversations[selectedUser];
-
-    const sendMessage = () => {
-        if (newMessage.trim()) {
-            currentConversation.messages.push({
-                id: Date.now(),
-                from: 'admin',
-                text: newMessage,
-                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    const loadMessages = async () => {
+        try {
+            setLoading(true);
+            setError('');
+            const response = await fetch('http://localhost:5000/api/messages/admin/all', {
+                headers: authHeaders
             });
-            setNewMessage('');
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || errData.error || `Failed to load messages (${response.status})`);
+            }
+            const data = await response.json();
+            setAllMessages(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError(err.message || 'Failed to load messages');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-    };
+    useEffect(() => {
+        loadMessages();
+    }, []);
+
+    const conversations = useMemo(() => {
+        const grouped = new Map();
+        for (const msg of allMessages) {
+            const key = String(msg.conversationId);
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    id: key,
+                    name: msg.userName || `User ${msg.userId}`,
+                    avatar: (msg.userName || 'U').slice(0, 2).toUpperCase(),
+                    doctorName: msg.doctorName || 'Doctor',
+                    messages: []
+                });
+            }
+            grouped.get(key).messages.push({
+                id: msg.id,
+                from: msg.senderType === 'doctor' ? 'admin' : 'user',
+                text: msg.text,
+                createdAt: msg.createdAt ? new Date(msg.createdAt).getTime() : 0,
+                time: msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'
+            });
+        }
+
+        return Array.from(grouped.values())
+            .map((conv) => ({
+                ...conv,
+                messages: [...conv.messages].sort((a, b) => a.createdAt - b.createdAt)
+            }))
+            .map((conv) => ({
+                ...conv,
+                lastMsg: conv.messages[conv.messages.length - 1]?.text || '',
+                lastTime: conv.messages[conv.messages.length - 1]?.time || '-'
+            }))
+            .sort((a, b) => (a.messages[a.messages.length - 1]?.id || 0) < (b.messages[b.messages.length - 1]?.id || 0) ? 1 : -1);
+    }, [allMessages]);
+
+    useEffect(() => {
+        if (!selectedConversation && conversations.length > 0) {
+            setSelectedConversation(conversations[0].id);
+        }
+    }, [conversations, selectedConversation]);
+
+    const currentConversation = conversations.find((c) => c.id === selectedConversation);
 
     return (
         <div className="dashboard-page">
@@ -63,31 +96,41 @@ const AdminMessages = () => {
                     </div>
                 </div>
 
+                {loading && <div className="dash-card" style={{ padding: '16px' }}>Loading admin messages...</div>}
+                {error && <div className="dash-card" style={{ padding: '16px', color: '#ef4444' }}>{error}</div>}
+
                 <div className="messages-layout">
                     <div className="msg-sidebar">
                         <div className="msg-sidebar-header">
                             <h3>User Conversations</h3>
                         </div>
                         {conversations.map((c) => (
-                            <div key={c.id} className={`msg-contact ${selectedUser === c.id ? 'active' : ''}`} onClick={() => setSelectedUser(c.id)}>
+                            <div key={c.id} className={`msg-contact ${selectedConversation === c.id ? 'active' : ''}`} onClick={() => setSelectedConversation(c.id)}>
                                 <div className="contact-avatar">{c.avatar}</div>
                                 <div className="contact-info">
                                     <div className="contact-name">{c.name}</div>
                                     <div className="contact-preview">{c.lastMsg}</div>
                                 </div>
-                                <div className="contact-time">{c.time}</div>
-                                {c.unread > 0 && <div className="contact-badge">{c.unread}</div>}
+                                <div className="contact-time">{c.lastTime}</div>
                             </div>
                         ))}
                     </div>
 
                     <div className="msg-chat">
+                        {!currentConversation ? (
+                            <div className="no-doctor-selected">
+                                <div className="empty-chat-icon">📭</div>
+                                <h3>No Conversation Selected</h3>
+                                <p>Select a conversation to view message history</p>
+                            </div>
+                        ) : (
+                            <>
                         <div className="chat-header">
                             <div className="chat-user">
                                 <div className="contact-avatar">{currentConversation.avatar}</div>
                                 <div>
                                     <div className="chat-name">{currentConversation.name}</div>
-                                    <div className="chat-status"><span className="online-dot"></span> Online</div>
+                                    <div className="chat-status"><span className="online-dot"></span> Doctor: {currentConversation.doctorName}</div>
                                 </div>
                             </div>
                         </div>
@@ -104,17 +147,12 @@ const AdminMessages = () => {
                         </div>
 
                         <div className="chat-input">
-                            <textarea
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                onKeyDown={handleKeyPress}
-                                placeholder="Type your response..."
-                                rows="1"
-                            />
-                            <button className="send-btn" onClick={sendMessage}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                            </button>
+                            <div style={{ width: '100%', color: '#64748b', fontSize: '0.9rem', padding: '8px 0' }}>
+                                Read-only conversation history. Admin broadcast/reply APIs can be added if required.
+                            </div>
                         </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
