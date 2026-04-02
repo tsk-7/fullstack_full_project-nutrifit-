@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
+import { API_BASE_URL } from '../services/api';
 import './Messages.css';
 
 const AdminMessages = () => {
@@ -22,7 +23,7 @@ const AdminMessages = () => {
         try {
             setLoading(true);
             setError('');
-            const response = await fetch('http://localhost:5000/api/messages/admin/all', {
+                const response = await fetch(`${API_BASE_URL}/messages/admin/all`, {
                 headers: authHeaders
             });
             if (!response.ok) {

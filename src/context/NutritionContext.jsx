@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { API_BASE_URL, authAPI } from '../services/api';
 
 const NutritionContext = createContext();
-const API_BASE_URL = 'http://localhost:5000/api';
 
 export const useNutrition = () => useContext(NutritionContext);
 

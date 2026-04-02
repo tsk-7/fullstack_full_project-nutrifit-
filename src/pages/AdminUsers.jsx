@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
+import { API_BASE_URL } from '../services/api';
 import './AdminDashboard.css';
 
 const AdminUsers = () => {
@@ -21,7 +22,7 @@ const AdminUsers = () => {
         try {
             setLoading(true);
             setError('');
-            const response = await fetch('http://localhost:5000/api/users', { headers: authHeaders });
+            const response = await fetch(`${API_BASE_URL}/users`, { headers: authHeaders });
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.message || errData.error || `Failed to load users (${response.status})`);
@@ -41,7 +42,7 @@ const AdminUsers = () => {
 
     const handleDelete = async (userId) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
                 method: 'DELETE',
                 headers: authHeaders
             });

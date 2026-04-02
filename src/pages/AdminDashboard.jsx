@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { API_BASE_URL } from '../services/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -26,8 +27,8 @@ const AdminDashboard = () => {
                 setLoading(true);
                 setError('');
                 const [statsRes, usersRes] = await Promise.all([
-                    fetch('http://localhost:5000/api/admin/stats', { headers: authHeaders }),
-                    fetch('http://localhost:5000/api/users', { headers: authHeaders })
+                    fetch(`${API_BASE_URL}/admin/stats`, { headers: authHeaders }),
+                    fetch(`${API_BASE_URL}/users`, { headers: authHeaders })
                 ]);
 
                 if (!statsRes.ok || !usersRes.ok) {

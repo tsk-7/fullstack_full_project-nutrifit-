@@ -16,6 +16,11 @@ for (const key of requiredEnv) {
   }
 }
 
+const corsOriginEnv = process.env.CORS_ORIGIN;
+const corsOrigin = corsOriginEnv
+  ? corsOriginEnv.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : ['http://localhost:5173', 'http://localhost:5176'];
+
 export const env = {
   port: Number(process.env.PORT || 5000),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -25,5 +30,5 @@ export const env = {
   mysqlPassword: process.env.MYSQL_PASSWORD,
   mysqlDatabase: process.env.MYSQL_DATABASE,
   jwtSecret: process.env.JWT_SECRET,
-  corsOrigin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5176']
+  corsOrigin
 };
