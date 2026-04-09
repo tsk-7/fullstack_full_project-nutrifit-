@@ -266,6 +266,29 @@ router.get('/doctor/user/:userId/daywise', requireRole('doctor'), async (req, re
       return res.status(400).json({ message: 'Invalid userId.' });
     }
 
+    const [userRows] = await pool.query(
+      `SELECT id, name, height, weight, waist
+       FROM users
+       WHERE id = ?
+       LIMIT 1`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const user = userRows[0];
+    const heightCm = Number(user.height);
+    const weightKg = Number(user.weight);
+    const waistCm = Number(user.waist);
+    const bmi = Number.isFinite(heightCm) && Number.isFinite(weightKg) && heightCm > 0 && weightKg > 0
+      ? Number((weightKg / Math.pow(heightCm / 100, 2)).toFixed(1))
+      : null;
+    const waistToHeightRatio = Number.isFinite(heightCm) && Number.isFinite(waistCm) && heightCm > 0 && waistCm > 0
+      ? Number((waistCm / heightCm).toFixed(2))
+      : null;
+
     const from = isValidDate(req.query?.from) ? req.query.from : null;
     const to = isValidDate(req.query?.to) ? req.query.to : null;
 
@@ -291,7 +314,18 @@ router.get('/doctor/user/:userId/daywise', requireRole('doctor'), async (req, re
       from && to ? [userId, userId, userId, userId, from, to] : [userId, userId, userId, userId]
     );
 
-    return res.json(rows);
+    return res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        height: user.height,
+        weight: user.weight,
+        waist: user.waist,
+        bmi,
+        waistToHeightRatio
+      },
+      reports: rows
+    });
   } catch (error) {
     return next(error);
   }
